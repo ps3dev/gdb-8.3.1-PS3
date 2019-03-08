@@ -1100,6 +1100,7 @@ COMMON_SFILES = \
 	remote-fileio.c \
 	remote-notif.c \
 	reverse.c \
+	run-on-main-thread.c \
 	rust-lang.c \
 	sentinel-frame.c \
 	ser-event.c \
@@ -1362,6 +1363,7 @@ HFILES_NO_SRCDIR = \
 	riscv-tdep.h \
 	rs6000-aix-tdep.h \
 	rs6000-tdep.h \
+	run-on-main-thread.h \
 	s390-linux-tdep.h \
 	s390-tdep.h \
 	score-tdep.h \
