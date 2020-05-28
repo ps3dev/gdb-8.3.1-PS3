@@ -234,6 +234,30 @@ gdbpy_enter::~gdbpy_enter ()
   PyGILState_Release (m_state);
 }
 
+/* A helper class to save and restore the GIL, but without touching
+   the other globals that are handled by gdbpy_enter.  */
+
+class gdbpy_gil
+{
+public:
+
+  gdbpy_gil ()
+    : m_state (PyGILState_Ensure ())
+  {
+  }
+
+  ~gdbpy_gil ()
+  {
+    PyGILState_Release (m_state);
+  }
+
+  DISABLE_COPY_AND_ASSIGN (gdbpy_gil);
+
+private:
+
+  PyGILState_STATE m_state;
+};
+
 /* Set the quit flag.  */
 
 static void
@@ -247,6 +271,10 @@ gdbpy_set_quit_flag (const struct extension_language_defn *extlang)
 static int
 gdbpy_check_quit_flag (const struct extension_language_defn *extlang)
 {
+  if (!gdb_python_initialized)
+    return 0;
+
+  gdbpy_gil gil;
   return PyOS_InterruptOccurred ();
 }
 
@@ -938,30 +966,6 @@ gdbpy_source_script (const struct extension_language_defn *extlang,
 
 /* Posting and handling events.  */
 
-/* A helper class to save and restore the GIL, but without touching
-   the other globals that are handled by gdbpy_enter.  */
-
-class gdbpy_gil
-{
-public:
-
-  gdbpy_gil ()
-    : m_state (PyGILState_Ensure ())
-  {
-  }
-
-  ~gdbpy_gil ()
-  {
-    PyGILState_Release (m_state);
-  }
-
-  DISABLE_COPY_AND_ASSIGN (gdbpy_gil);
-
-private:
-
-  PyGILState_STATE m_state;
-};
-
 /* A single event.  */
 struct gdbpy_event
 {
@@ -1565,6 +1569,7 @@ finalize_python (void *ignore)
 
   Py_Finalize ();
 
+  gdb_python_initialized = false;
   restore_active_ext_lang (previous_active);
 }
 
@@ -1727,8 +1732,7 @@ do_start_initialization ()
     return false;
 
   /* Release the GIL while gdb runs.  */
-  PyThreadState_Swap (NULL);
-  PyEval_ReleaseLock ();
+  PyEval_SaveThread ();
 
   make_final_cleanup (finalize_python, NULL);
 
