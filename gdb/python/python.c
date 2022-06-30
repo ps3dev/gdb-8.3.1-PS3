@@ -1844,6 +1844,16 @@ do_finish_initialization (const struct extension_language_defn *extlang)
 
   sys_path = PySys_GetObject ("path");
 
+  /* PySys_SetPath was deprecated in Python 3.11.  Disable this
+     deprecated code for Python 3.10 and newer.  Also note that this
+     ifdef eliminates potential initialization of sys.path via
+     PySys_SetPath.  My (kevinb's) understanding of PEP 587 suggests
+     that it's not necessary due to module_search_paths being
+     initialized to an empty list following any of the PyConfig
+     initialization functions.  If it does turn out that some kind of
+     initialization is still needed, it should be added to the
+     PyConfig-based initialization in do_start_initialize().  */
+#if PY_VERSION_HEX < 0x030a0000
   /* If sys.path is not defined yet, define it first.  */
   if (!(sys_path && PyList_Check (sys_path)))
     {
@@ -1854,6 +1864,7 @@ do_finish_initialization (const struct extension_language_defn *extlang)
 #endif
       sys_path = PySys_GetObject ("path");
     }
+#endif
   if (sys_path && PyList_Check (sys_path))
     {
       gdbpy_ref<> pythondir (PyString_FromString (gdb_pythondir.c_str ()));
