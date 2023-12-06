@@ -728,6 +728,30 @@ extern const struct language_defn *python_language;
       }						\
   } while (0)
 
+/* A helper class to save and restore the GIL, but without touching
+   the other globals that are handled by gdbpy_enter.  */
+
+class gdbpy_gil
+{
+public:
+
+  gdbpy_gil ()
+    : m_state (PyGILState_Ensure ())
+  {
+  }
+
+  ~gdbpy_gil ()
+  {
+    PyGILState_Release (m_state);
+  }
+
+  DISABLE_COPY_AND_ASSIGN (gdbpy_gil);
+
+private:
+
+  PyGILState_STATE m_state;
+};
+
 /* Use this after a TRY_EXCEPT to throw the appropriate Python
    exception.  This macro is for use inside setter functions.  */
 #define GDB_PY_SET_HANDLE_EXCEPTION(Exception)				\

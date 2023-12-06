@@ -234,30 +234,6 @@ gdbpy_enter::~gdbpy_enter ()
   PyGILState_Release (m_state);
 }
 
-/* A helper class to save and restore the GIL, but without touching
-   the other globals that are handled by gdbpy_enter.  */
-
-class gdbpy_gil
-{
-public:
-
-  gdbpy_gil ()
-    : m_state (PyGILState_Ensure ())
-  {
-  }
-
-  ~gdbpy_gil ()
-  {
-    PyGILState_Release (m_state);
-  }
-
-  DISABLE_COPY_AND_ASSIGN (gdbpy_gil);
-
-private:
-
-  PyGILState_STATE m_state;
-};
-
 /* Set the quit flag.  */
 
 static void
